@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  app_blue:
+    build: ./app_blue
+    container_name: app_blue
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env
+
+  app_green:
+    build: ./app_green
+    container_name: app_green
+    ports:
+      - "8082:8082"
+    env_file:
+      - .env
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf.template:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app_blue
+      - app_green
+    restart: always
