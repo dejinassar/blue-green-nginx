@@ -19,18 +19,18 @@ Nginx monitors the health of the Blue app and automatically retries requests on 
 ## How to Run Locally
 
 1.  **Clone and navigate into the repo**
-    ```bash
+    ```
     git clone 
     cd blue-green-nginx
     ```
 
 2.  **Create your .env file**
-    ```bash
+    ```
     cp .env.example .env
     ```
 
 3.  **Start all services**
-    ```bash
+    ```
     docker-compose up --build
     ```
 
@@ -44,18 +44,18 @@ This starts:
 ## Test the Setup
 
 ### 1. Check baseline (Blue active)
-```bash
+```
 curl -i http://localhost:8080/version
 You should see headers like:
 
 X-App-Pool: blue
 X-Release-Id: v1.0.0
 2.  Simulate Blue failure (Chaos)
-Bash
+
 
 curl -X POST http://localhost:8081/chaos/start
 3. Test failover
-Bash
+
 
 curl -i http://localhost:8080/version
 Now the response should come from Green:
@@ -63,7 +63,7 @@ Now the response should come from Green:
 X-App-Pool: green
 X-Release-Id: v1.0.1
 4. Stop chaos
-Bash
+
 
 curl -X POST http://localhost:8081/chaos/stop
 >>>>>>> 0161b00 (Initial commit - Blue Green Nginx project)
