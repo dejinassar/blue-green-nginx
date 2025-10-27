@@ -66,3 +66,4 @@ X-Release-Id: v1.0.1
 Bash
 
 curl -X POST http://localhost:8081/chaos/stop
+>>>>>>> 0161b00 (Initial commit - Blue Green Nginx project)
