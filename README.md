@@ -3,14 +3,14 @@
 ## Overview
 This project implements a **Blue-Green deployment setup** using **Docker Compose** and **Nginx upstreams**.
 The goal is to simulate a zero-downtime deployment setup where **Blue** is the active service and **Green** serves as a hot standby.
-If the Blue service fails, Nginx automatically switches traffic to Green — ensuring clients experience no downtime.
+If the Blue service fails, Nginx automatically switches traffic to Green ensuring clients experience no downtime.
 
 ---
 
 ## Architecture
-- **Blue app** → Active instance (port `8081`)
-- **Green app** → Backup instance (port `8082`)
-- **Nginx** → Acts as a reverse proxy and failover controller (public entrypoint on `8080`)
+- **Blue app** Active instance (port `8081`)
+- **Green app** Backup instance (port `8082`)
+- **Nginx** Acts as a reverse proxy and failover controller (public entrypoint on `8080`)
 
 Nginx monitors the health of the Blue app and automatically retries requests on Green when Blue becomes unavailable or returns 5xx errors.
 
@@ -50,7 +50,7 @@ You should see headers like:
 
 X-App-Pool: blue
 X-Release-Id: v1.0.0
-2. ⚡ Simulate Blue failure (Chaos)
+2.  Simulate Blue failure (Chaos)
 Bash
 
 curl -X POST http://localhost:8081/chaos/start
