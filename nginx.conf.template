@@ -1,34 +1,39 @@
 worker_processes 1;
 
-events {
-    worker_connections 1024;
-}
+events { worker_connections 1024; }
 
 http {
-    upstream backend {
-        server app_blue:8081 max_fails=1 fail_timeout=2s;
-        server app_green:8082 backup;
-    }
+    log_format custom_format '$remote_addr - $remote_user [$time_local] '
+                             '"$request" $status $body_bytes_sent '
+                             'pool=$ACTIVE_POOL release=$ACTIVE_RELEASE '
+                             'upstream_status=$upstream_status upstream=$upstream_addr '
+                             'request_time=$request_time upstream_response_time=$upstream_response_time';
+
+    access_log /var/log/nginx/access.log custom_format;
+
+    upstream blue_backend { server app_blue:8081; }
+    upstream green_backend { server app_green:8082; }
 
     server {
         listen 80;
 
+        # fallback default upstream
+        set $target_upstream blue_backend;
+
+        # override if env var exists
+        if ("${ACTIVE_POOL}" = "green") {
+            set $target_upstream green_backend;
+        }
+
         location / {
-            proxy_pass http://backend;
+            proxy_pass http://$target_upstream;
 
-            proxy_pass_header X-App-Pool;
-            proxy_pass_header X-Release-Id;
-
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-
-            proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
-            proxy_next_upstream_tries 2;
-            proxy_connect_timeout 1s;
-            proxy_read_timeout 1s;
-            proxy_send_timeout 1s;
+            # Always valid arguments, with fallback defaults
+            proxy_set_header X-App-Pool "${ACTIVE_POOL:-unknown}";
+            proxy_set_header X-Release-Id "${ACTIVE_RELEASE:-none}";
+            proxy_set_header Host "$host";
+            proxy_set_header X-Real-IP "$remote_addr";
+            proxy_set_header X-Forwarded-For "$proxy_add_x_forwarded_for";
         }
     }
 }

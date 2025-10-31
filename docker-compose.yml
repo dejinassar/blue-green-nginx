@@ -11,6 +11,7 @@ services:
       - RELEASE_ID=${RELEASE_ID_BLUE}
     env_file:
       - .env
+    command: ["sh", "-c", "npx http-server -p 8081 || sleep 1000"]
 
   app_green:
     image: ${GREEN_IMAGE}
@@ -22,10 +23,11 @@ services:
       - RELEASE_ID=${RELEASE_ID_GREEN}
     env_file:
       - .env
+    command: ["sh", "-c", "npx http-server -p 8082 || sleep 1000"]
 
   nginx:
     image: nginx:latest
-    container_name: nginx
+    container_name: blue-green-nginx
     ports:
       - "8080:80"
     volumes:
@@ -33,11 +35,19 @@ services:
       - ./start.sh:/start.sh:ro
     env_file:
       - .env
-    environment:
-      - ACTIVE_POOL=${ACTIVE_POOL}
-      - INACTIVE_POOL=${INACTIVE_POOL}
     depends_on:
       - app_blue
       - app_green
     restart: always
     command: ["/bin/sh", "/start.sh"]
+
+  alert_watcher:
+    build: ./watcher
+    container_name: alert_watcher
+    env_file:
+      - .env
+    volumes:
+      - ./watcher:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./nginx.conf.template:/etc/nginx/nginx.conf.template:ro
+    restart: always

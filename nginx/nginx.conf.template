@@ -12,7 +12,7 @@ http {
     access_log /var/log/nginx/access.log custom_format;
 
     upstream blue_backend { server app_blue:3000; }
-    upstream green_backend { server app_green:3000; }
+upstream green_backend { server app_green:3000; }
 
     server {
         listen 80;
