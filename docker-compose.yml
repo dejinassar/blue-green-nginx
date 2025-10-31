@@ -1,43 +1,60 @@
-version: "3.8"
-
 services:
   app_blue:
-    image: ${BLUE_IMAGE}
-    container_name: app_blue
-    ports:
-      - "8081:8081"
+    image: yimikaade/wonderful:devops-stage-two
+    container_name: blue-green-app_blue
     environment:
-      - APP_POOL=blue
-      - RELEASE_ID=${RELEASE_ID_BLUE}
-    env_file:
-      - .env
+      - X_APP_POOL=blue
+      - X_RELEASE_ID=${ACTIVE_RELEASE}
+    ports:
+      - "8081:3000"
+    #healthcheck:
+     # test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      #interval: 10s
+      #timeout: 5s
+      #retries: 3
 
   app_green:
-    image: ${GREEN_IMAGE}
-    container_name: app_green
-    ports:
-      - "8082:8082"
+    image: yimikaade/wonderful:devops-stage-two
+    container_name: blue-green-app_green
     environment:
-      - APP_POOL=green
-      - RELEASE_ID=${RELEASE_ID_GREEN}
-    env_file:
-      - .env
+      - X_APP_POOL=green
+      - X_RELEASE_ID=${INACTIVE_RELEASE}
+    ports:
+      - "8082:3000"
+    #healthcheck:
+     # test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      #interval: 10s
+      #timeout: 5s
+      #retries: 3
 
   nginx:
-    image: nginx:latest
-    container_name: nginx
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: blue-green-nginx
     ports:
       - "8080:80"
-    volumes:
-      - ./nginx.conf.template:/etc/nginx/nginx.conf.template:ro
-      - ./start.sh:/start.sh:ro
-    env_file:
-      - .env
     environment:
       - ACTIVE_POOL=${ACTIVE_POOL}
-      - INACTIVE_POOL=${INACTIVE_POOL}
+      - ACTIVE_RELEASE=${ACTIVE_RELEASE}
     depends_on:
       - app_blue
       - app_green
-    restart: always
-    command: ["/bin/sh", "/start.sh"]
+    volumes:
+      - nginx_logs:/var/log/nginx
+
+  alert_watcher:
+    build: ./watcher
+    container_name: blue-green-alert-watcher
+    environment:
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      - WINDOW_SIZE=${WINDOW_SIZE}
+      - ERROR_RATE_THRESHOLD=${ERROR_RATE_THRESHOLD}
+      - ALERT_COOLDOWN_SEC=${ALERT_COOLDOWN_SEC}
+    volumes:
+      - nginx_logs:/logs:ro
+    depends_on:
+      - nginx
+
+volumes:
+  nginx_logs:
